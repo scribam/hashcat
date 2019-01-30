@@ -1419,6 +1419,7 @@ typedef enum kern_type
   KERN_TYPE_ODF12                   = 18400,
   KERN_TYPE_SHA1_DOUBLE_MD5         = 18500,
   KERN_TYPE_ODF11                   = 18600,
+  KERN_TYPE_PS3_NID                 = 88888,
   KERN_TYPE_PLAINTEXT               = 99999,
 
 } kern_type_t;
@@ -1689,6 +1690,7 @@ int wpa_pmkid_pmk_parse_hash      (u8 *input_buf, u32 input_len, hash_t *hash_bu
 int ansible_vault_parse_hash      (u8 *input_buf, u32 input_len, hash_t *hash_buf, MAYBE_UNUSED hashconfig_t *hashconfig);
 int totp_parse_hash               (u8 *input_buf, u32 input_len, hash_t *hash_buf, MAYBE_UNUSED hashconfig_t *hashconfig);
 int apfs_parse_hash               (u8 *input_buf, u32 input_len, hash_t *hash_buf, MAYBE_UNUSED hashconfig_t *hashconfig);
+int ps3_nid_parse_hash            (u8 *input_buf, u32 input_len, hash_t *hash_buf, MAYBE_UNUSED hashconfig_t *hashconfig);
 
 /**
  * hook functions

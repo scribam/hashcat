@@ -567,6 +567,7 @@ static const char *HT_18300 = "Apple File System (APFS)";
 static const char *HT_18400 = "Open Document Format (ODF) 1.2 (SHA-256, AES)";
 static const char *HT_18500 = "sha1(md5(md5($pass)))";
 static const char *HT_18600 = "Open Document Format (ODF) 1.1 (SHA-1, Blowfish)";
+static const char *HT_88888 = "PS3 Function NIDs";
 static const char *HT_99999 = "Plaintext";
 
 static const char *HT_00011 = "Joomla < 2.5.18";
@@ -18909,6 +18910,52 @@ int apfs_parse_hash (u8 *input_buf, u32 input_len, hash_t *hash_buf, MAYBE_UNUSE
   return (PARSER_OK);
 }
 
+int ps3_nid_parse_hash (u8 *input_buf, u32 input_len, hash_t *hash_buf, MAYBE_UNUSED hashconfig_t *hashconfig)
+{
+  u32 *digest = (u32 *) hash_buf->digest;
+
+  salt_t *salt = hash_buf->salt;
+
+  token_t token;
+
+  token.token_cnt  = 1;
+
+  token.len_min[0] = 8;
+  token.len_max[0] = 8;
+  token.attr[0]    = TOKEN_ATTR_VERIFY_LENGTH
+  | TOKEN_ATTR_VERIFY_HEX;
+
+  const int rc_tokenizer = input_tokenizer (input_buf, input_len, &token);
+
+  if (rc_tokenizer != PARSER_OK) return (rc_tokenizer);
+
+  u8 *hash_pos = token.buf[0];
+
+  digest[0] = hex_to_u32 (hash_pos + 0);
+  digest[1] = 0;
+  digest[2] = 0;
+  digest[3] = 0;
+  digest[4] = 0;
+
+  if (hashconfig->opti_type & OPTI_TYPE_PRECOMPUTE_MERKLE)
+  {
+    digest[0] -= SHA1M_A;
+    digest[1] -= SHA1M_B;
+    digest[2] -= SHA1M_C;
+    digest[3] -= SHA1M_D;
+    digest[4] -= SHA1M_E;
+  }
+
+  u8 salt_pos[32] = "6759659904250490566427499489741A";
+  int salt_len = 32;
+
+  const bool parse_rc = parse_and_store_generic_salt ((u8 *) salt->salt_buf, (int *) &salt->salt_len, salt_pos, salt_len, hashconfig);
+
+  if (parse_rc == false) return (PARSER_SALT_LENGTH);
+
+  return (PARSER_OK);
+}
+
 /**
  * hook functions
  */
@@ -19372,6 +19419,7 @@ const char *strhashtype (const u32 hash_mode)
     case 18400: return HT_18400;
     case 18500: return HT_18500;
     case 18600: return HT_18600;
+	case 88888: return HT_88888;
     case 99999: return HT_99999;
   }
 
@@ -23306,6 +23354,10 @@ int ascii_digest (hashcat_ctx_t *hashcat_ctx, char *out_buf, const size_t out_le
           odf11->encrypted_data[i + 6],
           odf11->encrypted_data[i + 7]);
     }
+  }
+  else if (hash_mode == 88888)
+  {
+    snprintf(out_buf, out_len, "%08x", byte_swap_32(digest_buf[0]));
   }
   else if (hash_mode == 99999)
   {
@@ -28800,6 +28852,7 @@ int hashconfig_init (hashcat_ctx_t *hashcat_ctx)
                  hashconfig->st_pass        = ST_PASS_HASHCAT_PLAIN;
                  break;
 
+
     case 18500:  hashconfig->hash_type      = HASH_TYPE_SHA1;
                  hashconfig->salt_type      = SALT_TYPE_NONE;
                  hashconfig->attack_exec    = ATTACK_EXEC_INSIDE_KERNEL;
@@ -28831,6 +28884,29 @@ int hashconfig_init (hashcat_ctx_t *hashcat_ctx)
                  hashconfig->dgst_pos3      = 3;
                  hashconfig->st_hash        = ST_HASH_18600;
                  hashconfig->st_pass        = ST_PASS_HASHCAT_PLAIN;
+                 break;
+
+    case 88888:  hashconfig->hash_type      = HASH_TYPE_SHA1;
+                 hashconfig->salt_type      = SALT_TYPE_EMBEDDED;
+                 hashconfig->attack_exec    = ATTACK_EXEC_INSIDE_KERNEL;
+                 hashconfig->opts_type      = OPTS_TYPE_PT_GENERATE_BE
+                                            | OPTS_TYPE_ST_ADD80
+                                            | OPTS_TYPE_ST_ADDBITS15
+                                            | OPTS_TYPE_ST_HEX;
+                 hashconfig->kern_type      = KERN_TYPE_PS3_NID;
+                 hashconfig->dgst_size      = DGST_SIZE_4_5;
+                 hashconfig->parse_func     = ps3_nid_parse_hash;
+                 hashconfig->opti_type      = OPTI_TYPE_ZERO_BYTE
+                                            | OPTI_TYPE_PRECOMPUTE_INIT
+                                            | OPTI_TYPE_PRECOMPUTE_MERKLE
+                                            | OPTI_TYPE_EARLY_SKIP
+                                            | OPTI_TYPE_NOT_ITERATED
+                                            | OPTI_TYPE_APPENDED_SALT
+                                            | OPTI_TYPE_RAW_HASH;
+                 hashconfig->dgst_pos0      = 0;
+                 hashconfig->dgst_pos1      = 1;
+                 hashconfig->dgst_pos2      = 2;
+                 hashconfig->dgst_pos3      = 3;
                  break;
 
     case 99999:  hashconfig->hash_type      = HASH_TYPE_PLAINTEXT;

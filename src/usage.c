@@ -313,6 +313,7 @@ static const char *const USAGE_BIG[] =
   "   7200 | GRUB 2                                           | Operating Systems",
   "   9900 | Radmin2                                          | Operating Systems",
   "    125 | ArubaOS                                          | Operating Systems",
+  "  88888 | PS3 Function NID                                 | Operating-Systems",
   "   7700 | SAP CODVN B (BCODE)                              | Enterprise Application Software (EAS)",
   "   7701 | SAP CODVN B (BCODE) via RFC_READ_TABLE           | Enterprise Application Software (EAS)",
   "   7800 | SAP CODVN F/G (PASSCODE)                         | Enterprise Application Software (EAS)",
